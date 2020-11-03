@@ -784,11 +784,11 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
         }
 
         // Create the attribute indices window
-        int[] attIndicesWindow = new int[data.numAttributes() - 1];
+        int[] attIndicesWindow = new int[data.numAttributes() - 1]; //tworzenie tablicy atrybutów
         int j = 0;
         for (int i = 0; i < attIndicesWindow.length; i++) {
             if (j == data.classIndex()) {
-                j++; // do not include the class
+                j++; // do not include the class sprawdza czy index nie nie jest indexem kasy
             }
             attIndicesWindow[i] = j++;
         }
@@ -797,13 +797,13 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
         double totalSumSquared = 0;
 
         // Compute initial class counts
-        double[] classProbs = new double[train.numClasses()];
+        double[] classProbs = new double[train.numClasses()]; // ile jest klas
         for (int i = 0; i < train.numInstances(); i++) {
             Instance inst = train.instance(i);
-            if (data.classAttribute().isNominal()) {
+            if (data.classAttribute().isNominal()) { //czy wartość nominalna
                 classProbs[(int) inst.classValue()] += inst.weight();
                 totalWeight += inst.weight();
-            } else {
+            } else { // tutaj nie wchodzi
                 classProbs[0] += inst.classValue() * inst.weight();
                 totalSumSquared +=
                         inst.classValue() * inst.classValue() * inst.weight();
@@ -812,7 +812,7 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
         }
 
         double trainVariance = 0;
-        if (data.classAttribute().isNumeric()) {
+        if (data.classAttribute().isNumeric()) { //tu nie wchodzi
             trainVariance =
                     RandomTree.singleVariance(classProbs[0], totalSumSquared, totalWeight)
                             / totalWeight;
@@ -1053,7 +1053,7 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
             }
 
             double trainVariance = 0;
-            if (data.classAttribute().isNumeric()) {
+            if (data.classAttribute().isNumeric()) { // w tym zbiorze danych tu nie wejdzie
                 trainVariance =
                         RandomTree
                                 .singleVariance(classProbs[0], totalSumSquared, totalWeight)
@@ -1295,7 +1295,7 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
             }
 
             double priorVar = 0;
-            if (data.classAttribute().isNumeric()) {
+            if (data.classAttribute().isNumeric()) { // tu nie wejdzie bo klasa nie jest numeryczna
 
                 // Compute prior variance
                 double totalSum = 0, totalSumSquared = 0, totalSumOfWeights = 0;
@@ -1324,7 +1324,7 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
              */
 
             // Are we at an inner node
-            if (m_Attribute > -1) {
+            if (m_Attribute > -1) {// czy jesteśmy w węźle wewnętrznym
 
                 // Compute new weights for subsets based on backfit data
                 m_Prop = new double[m_Successors.length];
@@ -1333,7 +1333,7 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
                     if (!inst.isMissing(m_Attribute)) {
                         if (data.attribute(m_Attribute).isNominal()) {
                             m_Prop[(int) inst.value(m_Attribute)] += inst.weight();
-                        } else {
+                        } else {// wyliczenie nowej wagi dla węzła - w zależniści od miejsca podziału na lewo lub prawo
                             m_Prop[(inst.value(m_Attribute) < m_SplitPoint) ? 0 : 1] +=
                                     inst.weight();
                         }
@@ -1358,7 +1358,7 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
                 Utils.normalize(m_Prop);
 
                 // Split data
-                Instances[] subsets = splitData(data);
+                Instances[] subsets = splitData(data); //ponowne dzielenie po nowych wartościach
 
                 // Go through subsets
                 for (int i = 0; i < subsets.length; i++) {
@@ -1367,10 +1367,10 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
                     double[] dist = new double[data.numClasses()];
                     double sumOfWeights = 0;
                     for (int j = 0; j < subsets[i].numInstances(); j++) {
-                        if (data.classAttribute().isNominal()) {
+                        if (data.classAttribute().isNominal()) { //tu jest wyliczana dystrybuanta dla każdego wiersza w subset
                             dist[(int) subsets[i].instance(j).classValue()] +=
                                     subsets[i].instance(j).weight();
-                        } else {
+                        } else { // tu nie wejdzie przy tych danych
                             dist[0] +=
                                     subsets[i].instance(j).classValue()
                                             * subsets[i].instance(j).weight();
@@ -1378,7 +1378,7 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
                         }
                     }
 
-                    if (sumOfWeights > 0) {
+                    if (sumOfWeights > 0) { // jeżeli suma wag jest > 0 to dystrybuantę trzeba podielić przez sume wag
                         dist[0] /= sumOfWeights;
                     }
 
@@ -1394,7 +1394,7 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
                 }
 
                 for (int i = 0; i < subsets.length; i++) {
-                    if (m_Successors[i].m_ClassDistribution == null) {
+                    if (m_Successors[i].m_ClassDistribution == null) { //jeżeli dystrybuanta danego poddrzewa jest nullem to wracamy
                         return;
                     }
                 }
@@ -1427,7 +1427,7 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
                                  double minVariance) throws Exception {
 
             // Make leaf if there are no training instances
-            if (data.numInstances() == 0) {
+            if (data.numInstances() == 0) { // tworzy liść jeśli nie ma już zbiorów
                 m_Attribute = -1;
                 m_ClassDistribution = null;
                 m_Prop = null;
@@ -1439,7 +1439,7 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
             }
 
             double priorVar = 0;
-            if (data.classAttribute().isNumeric()) {
+            if (data.classAttribute().isNumeric()) { //nie wejdzie
 
                 // Compute prior variance
                 double totalSum = 0, totalSumSquared = 0, totalSumOfWeights = 0;
@@ -1510,7 +1510,7 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
             int k = m_KValue;
             boolean gainFound = false;
             double[] tempNumericVals = new double[data.numAttributes()];
-            while ((windowSize > 0) && (k-- > 0 || !gainFound)) {
+            while ((windowSize > 0) && (k-- > 0 || !gainFound)) { // wylicznie punktów podzialu
 
                 int chosenIndex = random.nextInt(windowSize);
                 attIndex = attIndicesWindow[chosenIndex];
@@ -1526,18 +1526,18 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
                                 totalSubsetWeights, data, tempNumericVals);
 
                 double currVal =
-                        data.classAttribute().isNominal() ? gain(dists[0], priorVal(dists[0]))
+                        data.classAttribute().isNominal() ? gain(dists[0], priorVal(dists[0])) // za każdym razem wyliczamy miejsce dzielenni
                                 : tempNumericVals[attIndex];
 
                 if (Utils.gr(currVal, 0)) {
-                    gainFound = true;
+                    gainFound = true; // znaleziony punkt przecięcia
                 }
 
                 if ((currVal > val)
                         || ((!getBreakTiesRandomly()) && (currVal == val) && (attIndex < bestIndex))) {
                     val = currVal;
-                    bestIndex = attIndex;
-                    split = currSplit;
+                    bestIndex = attIndex; // znaleziony najlepszy index podziału
+                    split = currSplit; //nowe miejsce podziału
                     bestProps = props[0];
                     bestDists = dists[0];
                 }
@@ -1547,8 +1547,8 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
             m_Attribute = bestIndex;
 
             // Any useful split found?
-            if (Utils.gr(val, 0)) {
-                if (m_computeImpurityDecreases) {
+            if (Utils.gr(val, 0)) { // czy warto dzielić
+                if (m_computeImpurityDecreases) { // nie weszło
                     m_impurityDecreasees[m_Attribute][0] += val;
                     m_impurityDecreasees[m_Attribute][1]++;
                 }
@@ -1557,12 +1557,12 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
                 m_SplitPoint = split;
                 m_Prop = bestProps;
                 Instances[] subsets = splitData(data);
-                m_Successors = new Tree[bestDists.length];
+                m_Successors = new Tree[bestDists.length]; //poddrzewo z 2 liśćmi [bestdist.lengh]
                 double[] attTotalSubsetWeights = totalSubsetWeights[bestIndex];
 
                 for (int i = 0; i < bestDists.length; i++) {
                     m_Successors[i] = new Tree();
-                    m_Successors[i].buildTree(subsets[i], bestDists[i], attIndicesWindow,
+                    m_Successors[i].buildTree(subsets[i], bestDists[i], attIndicesWindow, //rekurencyjne budowanie drzewa
                             data.classAttribute().isNominal() ? 0 : attTotalSubsetWeights[i],
                             random, depth + 1, minVariance);
                 }
@@ -1620,13 +1620,13 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
         protected Instances[] splitData(Instances data) throws Exception {
 
             // Allocate array of Instances objects
-            Instances[] subsets = new Instances[m_Prop.length];
+            Instances[] subsets = new Instances[m_Prop.length]; // na ile gałęzi dzielć
             for (int i = 0; i < m_Prop.length; i++) {
                 subsets[i] = new Instances(data, data.numInstances());
             }
 
             // Go through the data
-            for (int i = 0; i < data.numInstances(); i++) {
+            for (int i = 0; i < data.numInstances(); i++) { //przechodzimy po danych i przydzielamy na lewy lub prawy liść
 
                 // Get instance
                 Instance inst = data.instance(i);
@@ -1657,7 +1657,7 @@ public class RandomTree extends AbstractClassifier implements OptionHandler,
 
                 // Do we have a numeric attribute?
                 if (data.attribute(m_Attribute).isNumeric()) {
-                    subsets[(inst.value(m_Attribute) < m_SplitPoint) ? 0 : 1].add(inst);
+                    subsets[(inst.value(m_Attribute) < m_SplitPoint) ? 0 : 1].add(inst); // przydielenie do zbioru na lewo lub prawo
 
                     // Proceed to next instance
                     continue;
