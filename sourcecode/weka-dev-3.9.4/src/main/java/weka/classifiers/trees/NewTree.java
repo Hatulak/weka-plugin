@@ -87,6 +87,15 @@ import java.util.*;
  *  Break ties randomly when several attributes look equally good.
  * </pre>
  *
+ *  <pre>
+ *  -P
+ *  How many top scoring pairs
+ * </pre>
+ *  <pre>
+ *    -Q
+ *   Unique pairs
+ *  </pre>
+ *
  * <pre>
  * -output-debug-info
  *  If set, classifier is run in debug mode and
@@ -188,12 +197,12 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
     /**
      * Whether to choose unique pairs
      */
-    protected boolean m_uniquePairs;
+    protected boolean m_uniquePairs = false;
 
     /**
      * Determines how many top scoring pairs are going to be chosen
      */
-    protected int m_kTopScoringPairs;
+    protected int m_kTopScoringPairs = 1;
 
     /**
      * Returns a string describing classifier
@@ -512,6 +521,11 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
 
         Vector<Option> newVector = new Vector<Option>();
 
+        newVector.addElement(new Option("\t" + "Whether to choose unique pairs", "Q", 0,
+                "-Q"));
+        newVector.addElement(new Option("\t" + "Determines how many top scoring pairs are going to be chosen (default 1)", "P", 1,
+                "-P <num>"));
+
         newVector.addElement(new Option(
                 "\tNumber of attributes to randomly investigate.\t(default 0)\n"
                         + "\t(<1 = int(log_2(#predictors)+1)).", "K", 1,
@@ -540,10 +554,6 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
         newVector.addElement(new Option("\t" + breakTiesRandomlyTipText(), "B", 0,
                 "-B"));
 
-        newVector.addElement(new Option("\t" + "Whether to choose unique pairs", "UQ", 0,
-                "-UQ"));
-        newVector.addElement(new Option("\t" + "Determines how many top scoring pairs are going to be chosen (default 1)", "KTSP", 1,
-                "-KTSP <num>"));
 
         newVector.addAll(Collections.list(super.listOptions()));
 
@@ -558,6 +568,13 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
     @Override
     public String[] getOptions() {
         Vector<String> result = new Vector<String>();
+
+        if (isUniquePairs()) {
+            result.add("-Q");
+        }
+
+        result.add("-P");
+        result.add("" + getKTopScoringPairs());
 
         result.add("-K");
         result.add("" + getKValue());
@@ -588,13 +605,6 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
         if (getBreakTiesRandomly()) {
             result.add("-B");
         }
-
-        if(isUniquePairs()) {
-            result.add("-UQ");
-        }
-
-        result.add("-KTSP");
-        result.add("" + getKTopScoringPairs());
 
         Collections.addAll(result, super.getOptions());
 
@@ -647,6 +657,14 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
      * -U
      *  Allow unclassified instances.
      * </pre>
+     * <pre>
+     * -P
+     *  TOP SCORING PAIRS
+     * </pre>
+     * <pre>
+     * -Q
+     *  UNIQUE PAIRS
+     * </pre>
      *
      * <pre>
      * -B
@@ -678,6 +696,15 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
     @Override
     public void setOptions(String[] options) throws Exception {
         String tmpStr;
+
+        setUniquePairs(Utils.getFlag('Q', options));
+
+        String kTSPString = Utils.getOption('P', options);
+        if (kTSPString.length() != 0) {
+            m_kTopScoringPairs = Integer.parseInt(kTSPString);
+        } else {
+            m_kTopScoringPairs = 1;
+        }
 
         tmpStr = Utils.getOption('K', options);
         if (tmpStr.length() != 0) {
@@ -724,14 +751,6 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
 
         setBreakTiesRandomly(Utils.getFlag('B', options));
 
-        setUniquePairs(Utils.getFlag("UQ",options));
-
-        String kTSPString = Utils.getOption("KTSP", options);
-        if(kTSPString.length() != 0){
-            m_kTopScoringPairs = Integer.parseInt(kTSPString);
-        } else {
-            m_kTopScoringPairs = 1;
-        }
 
         super.setOptions(options);
 
@@ -811,6 +830,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
         } else {
             data.randomize(rand);
             data.stratify(m_NumFolds);
+
             train = data.trainCV(m_NumFolds, 1, rand);
             backfit = data.testCV(m_NumFolds, 1);
         }
@@ -854,8 +874,29 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
         // Build tree
         m_Tree = new Tree();
         m_Info = new Instances(data, 0);
+        List<Instance>[] splitedByClass = (ArrayList<Instance>[]) new ArrayList[data.numClasses()];
+        for (int i = 0; i < data.numClasses(); i++) {
+            splitedByClass[i] = new ArrayList<Instance>();
+        }
+        double[][] srednie = new double[data.numClasses()][data.numAttributes() - 1];
+
+        for (int i = 0; i < train.size(); i++) {
+            Instance instance = train.get(i);
+            splitedByClass[(int) instance.classValue()].add(instance);
+        }
+
+        for (int i = 0; i < splitedByClass.length; i++) {
+            for (int n = 0; n < data.numAttributes() - 1; n++) {
+                for (int l = 0; l < splitedByClass[i].size(); l++) {
+                    srednie[i][n] += splitedByClass[i].get(l).value(n);
+                }
+                srednie[i][n] = srednie[i][n] / splitedByClass[i].size();
+            }
+        }
+        System.out.println(srednie);
+
         m_Tree.buildTree(train, classProbs, attIndicesWindow, totalWeight, rand, 0,
-                m_MinVarianceProp * trainVariance);
+                m_MinVarianceProp * trainVariance, srednie);
 
         // Backfit if required
         if (backfit != null) {
@@ -1456,7 +1497,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
          */
         protected void buildTree(Instances data, double[] classProbs,
                                  int[] attIndicesWindow, double totalWeight, Random random, int depth,
-                                 double minVariance) throws Exception {
+                                 double minVariance, double[][] srednie) throws Exception {
 
             // Make leaf if there are no training instances
             if (data.numInstances() == 0) {
@@ -1471,21 +1512,21 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             }
 
             double priorVar = 0;
-            if (data.classAttribute().isNumeric()) {
-
-                // Compute prior variance
-                double totalSum = 0, totalSumSquared = 0, totalSumOfWeights = 0;
-                for (int i = 0; i < data.numInstances(); i++) {
-                    Instance inst = data.instance(i);
-                    totalSum += inst.classValue() * inst.weight();
-                    totalSumSquared +=
-                            inst.classValue() * inst.classValue() * inst.weight();
-                    totalSumOfWeights += inst.weight();
-                }
-                priorVar =
-                        NewTree.singleVariance(totalSum, totalSumSquared,
-                                totalSumOfWeights);
-            }
+//            if (data.classAttribute().isNumeric()) {
+//
+//                // Compute prior variance
+//                double totalSum = 0, totalSumSquared = 0, totalSumOfWeights = 0;
+//                for (int i = 0; i < data.numInstances(); i++) {
+//                    Instance inst = data.instance(i);
+//                    totalSum += inst.classValue() * inst.weight();
+//                    totalSumSquared +=
+//                            inst.classValue() * inst.classValue() * inst.weight();
+//                    totalSumOfWeights += inst.weight();
+//                }
+//                priorVar =
+//                        NewTree.singleVariance(totalSum, totalSumSquared,
+//                                totalSumOfWeights);
+//            }
 
             // Check if node doesn't contain enough instances or is pure
             // or maximum depth reached
@@ -1539,9 +1580,60 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             // Investigate K random attributes
             int attIndex = 0;
             int windowSize = attIndicesWindow.length;
-            int k = m_KValue;
             boolean gainFound = false;
             double[] tempNumericVals = new double[data.numAttributes()];
+
+            int kTSP = m_kTopScoringPairs;
+            boolean uniquePairs = m_uniquePairs;
+
+            List<PairHolder> pairHolders = new LinkedList<>();
+
+            for (int i = 0; i < windowSize - 1; i++) {
+                for (int j = i + 1; j < windowSize; j++) {
+                    int attIndex1 = attIndicesWindow[i];
+                    int attIndex2 = attIndicesWindow[j];
+                    double wsp = 0;
+                    for (int i1 = 0; i1 < srednie.length; i1++) {
+                        wsp += srednie[i1][attIndex1] / srednie[i1][attIndex2];
+                    }
+                    wsp = wsp / srednie.length;
+
+                    int[] suma = new int[data.numClasses()];
+                    int[] counter = new int[data.numClasses()];
+                    for (int i1 = 0; i1 < data.size(); i1++) {
+                        counter[(int) data.get(i1).classValue()] += 1;
+                        if (data.get(i1).value(attIndex1) > wsp * data.get(i1).value(attIndex2)) {
+                            suma[(int) data.get(i1).classValue()] += 1;
+                        }
+                    }
+
+                    //TODO - zakładamy że mamy 2 klasy
+                    double[] p = new double[data.numClasses()]; // data.numClasses() = 2
+                    p[0] = suma[0] / (double) counter[0];
+                    p[1] = suma[1] / (double) counter[1];
+
+                    double delta = Math.abs(p[0] - p[1]);
+
+                    pairHolders.add(new PairHolder(attIndex1, attIndex2, wsp, delta));
+
+                }
+            }
+
+            Collections.sort(pairHolders, new Comparator<PairHolder>() {
+                @Override
+                public int compare(PairHolder o1, PairHolder o2) {
+                    return - Double.compare(o1.getDelta(), o2.getDelta());
+                }
+            });
+
+            pairHolders.forEach(p -> System.out.println(p.toString()));
+
+            //todo - uwzględnoć uniquePairs
+            List<PairHolder> topScoringPairs = pairHolders.subList(0, m_kTopScoringPairs);
+
+            //TODO - kontynuacja - podzielenie danych po najlepszych parach, policzyć średnie  i wywołać rekurencyjne budowanie drzewa
+
+            int k = 0;
             while ((windowSize > 0) && (k-- > 0 || !gainFound)) {
 
                 int chosenIndex = random.nextInt(windowSize);
@@ -1596,7 +1688,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
                     m_Successors[i] = new Tree();
                     m_Successors[i].buildTree(subsets[i], bestDists[i], attIndicesWindow,
                             data.classAttribute().isNominal() ? 0 : attTotalSubsetWeights[i],
-                            random, depth + 1, minVariance);
+                            random, depth + 1, minVariance, srednie);
                 }
 
                 // If all successors are non-empty, we don't need to store the class
@@ -2112,6 +2204,46 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             }
 
             return num;
+        }
+
+        protected class PairHolder implements Serializable {
+            private int atributeIndex1;
+            private int atributeIndex2;
+            private double wspolczynnik;
+            private double delta;
+
+            public PairHolder(int atributeIndex1, int atributeIndex2, double wspolczynnik, double delta) {
+                this.atributeIndex1 = atributeIndex1;
+                this.atributeIndex2 = atributeIndex2;
+                this.wspolczynnik = wspolczynnik;
+                this.delta = delta;
+            }
+
+            public int getAtributeIndex1() {
+                return atributeIndex1;
+            }
+
+            public int getAtributeIndex2() {
+                return atributeIndex2;
+            }
+
+            public double getWspolczynnik() {
+                return wspolczynnik;
+            }
+
+            public double getDelta() {
+                return delta;
+            }
+
+            @Override
+            public String toString() {
+                return "PairHolder{" +
+                        "atributeIndex1=" + atributeIndex1 +
+                        ", atributeIndex2=" + atributeIndex2 +
+                        ", wspolczynnik=" + wspolczynnik +
+                        ", delta=" + delta +
+                        '}';
+            }
         }
     }
 
