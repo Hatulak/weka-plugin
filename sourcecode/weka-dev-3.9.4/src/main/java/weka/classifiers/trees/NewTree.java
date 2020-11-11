@@ -1632,7 +1632,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             });
 
             //sortowanko
-            pairHolders.forEach(p -> System.out.println(p.toString()));
+            //pairHolders.forEach(p -> System.out.println(p.toString()));
 
             //todo - uwzględnoć uniquePairs -> done
             List<PairHolder> topScoringPairs;
@@ -1727,17 +1727,17 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             if (emptySuccessor) {
                 m_ClassDistribution = classProbs.clone();
             }
-//            } else {
-//
-//                // Make leaf
-//                m_Attribute = -1;
-//                m_ClassDistribution = classProbs.clone();
-//                if (data.classAttribute().isNumeric()) {
-//                    m_Distribution = new double[2];
-//                    m_Distribution[0] = priorVar;
-//                    m_Distribution[1] = totalWeight;
-//                }
-//            }
+             else {
+
+                // Make leaf
+                m_Attribute = -1;
+                m_ClassDistribution = classProbs.clone();
+                if (data.classAttribute().isNumeric()) {
+                    m_Distribution = new double[2];
+                    m_Distribution[0] = priorVar;
+                    m_Distribution[1] = totalWeight;
+                }
+            }
         }
 
         private Instances[] splitDataWithBestPairs(Instances data, List<PairHolder> topScoringPairs) {
