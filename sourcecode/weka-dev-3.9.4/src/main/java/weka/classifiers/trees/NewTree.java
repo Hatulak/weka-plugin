@@ -87,11 +87,11 @@ import java.util.*;
  *  Break ties randomly when several attributes look equally good.
  * </pre>
  *
- *  <pre>
+ * <pre>
  *  -P
  *  How many top scoring pairs
  * </pre>
- *  <pre>
+ * <pre>
  *    -Q
  *   Unique pairs
  *  </pre>
@@ -874,26 +874,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
         // Build tree
         m_Tree = new Tree();
         m_Info = new Instances(data, 0);
-        List<Instance>[] splitedByClass = (ArrayList<Instance>[]) new ArrayList[data.numClasses()];
-        for (int i = 0; i < data.numClasses(); i++) {
-            splitedByClass[i] = new ArrayList<Instance>();
-        }
-        double[][] srednie = new double[data.numClasses()][data.numAttributes() - 1];
-
-        for (int i = 0; i < train.size(); i++) {
-            Instance instance = train.get(i);
-            splitedByClass[(int) instance.classValue()].add(instance);
-        }
-
-        for (int i = 0; i < splitedByClass.length; i++) {
-            for (int n = 0; n < data.numAttributes() - 1; n++) {
-                for (int l = 0; l < splitedByClass[i].size(); l++) {
-                    srednie[i][n] += splitedByClass[i].get(l).value(n);
-                }
-                srednie[i][n] = srednie[i][n] / splitedByClass[i].size();
-            }
-        }
-        System.out.println(srednie);
+        double[][] srednie = countAvg(train);
 
         m_Tree.buildTree(train, classProbs, attIndicesWindow, totalWeight, rand, 0,
                 m_MinVarianceProp * trainVariance, srednie);
@@ -902,6 +883,30 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
         if (backfit != null) {
             m_Tree.backfitData(backfit);
         }
+    }
+
+    private double[][] countAvg(Instances train) {
+        List<Instance>[] splitedByClass = (ArrayList<Instance>[]) new ArrayList[train.numClasses()];
+        for (int i = 0; i < train.numClasses(); i++) {
+            splitedByClass[i] = new ArrayList<Instance>();
+        }
+        double[][] srednie = new double[train.numClasses()][train.numAttributes() - 1];
+
+        for (int i = 0; i < train.size(); i++) {
+            Instance instance = train.get(i);
+            splitedByClass[(int) instance.classValue()].add(instance);
+        }
+
+        for (int i = 0; i < splitedByClass.length; i++) {
+            for (int n = 0; n < train.numAttributes() - 1; n++) {
+                for (int l = 0; l < splitedByClass[i].size(); l++) {
+                    srednie[i][n] += splitedByClass[i].get(l).value(n);
+                }
+                srednie[i][n] = srednie[i][n] / splitedByClass[i].size();
+            }
+        }
+        System.out.println(srednie);
+        return srednie;
     }
 
     /**
@@ -1622,98 +1627,184 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             Collections.sort(pairHolders, new Comparator<PairHolder>() {
                 @Override
                 public int compare(PairHolder o1, PairHolder o2) {
-                    return - Double.compare(o1.getDelta(), o2.getDelta());
+                    return -Double.compare(o1.getDelta(), o2.getDelta());
                 }
             });
 
+            //sortowanko
             pairHolders.forEach(p -> System.out.println(p.toString()));
 
-            //todo - uwzględnoć uniquePairs
-            List<PairHolder> topScoringPairs = pairHolders.subList(0, m_kTopScoringPairs);
+            //todo - uwzględnoć uniquePairs -> done
+            List<PairHolder> topScoringPairs;
+            if (m_uniquePairs) {
+                topScoringPairs = getUniquePairs(pairHolders, m_kTopScoringPairs);
+            } else {
+                topScoringPairs = pairHolders.subList(0, m_kTopScoringPairs);
+            }
+            topScoringPairs.forEach(p -> System.out.println(p.toString()));
 
             //TODO - kontynuacja - podzielenie danych po najlepszych parach, policzyć średnie  i wywołać rekurencyjne budowanie drzewa
 
-            int k = 0;
-            while ((windowSize > 0) && (k-- > 0 || !gainFound)) {
-
-                int chosenIndex = random.nextInt(windowSize);
-                attIndex = attIndicesWindow[chosenIndex];
-
-                // shift chosen attIndex out of window
-                attIndicesWindow[chosenIndex] = attIndicesWindow[windowSize - 1];
-                attIndicesWindow[windowSize - 1] = attIndex;
-                windowSize--;
-
-                double currSplit =
-                        data.classAttribute().isNominal() ? distribution(props, dists,
-                                attIndex, data) : numericDistribution(props, dists, attIndex,
-                                totalSubsetWeights, data, tempNumericVals);
-
-                double currVal =
-                        data.classAttribute().isNominal() ? gain(dists[0], priorVal(dists[0]))
-                                : tempNumericVals[attIndex];
-
-                if (Utils.gr(currVal, 0)) {
-                    gainFound = true;
-                }
-
-                if ((currVal > val)
-                        || ((!getBreakTiesRandomly()) && (currVal == val) && (attIndex < bestIndex))) {
-                    val = currVal;
-                    bestIndex = attIndex;
-                    split = currSplit;
-                    bestProps = props[0];
-                    bestDists = dists[0];
-                }
-            }
+//            int k = 0;
+//            while ((windowSize > 0) && (k-- > 0 || !gainFound)) {
+//
+//                int chosenIndex = random.nextInt(windowSize);
+//                attIndex = attIndicesWindow[chosenIndex];
+//
+//                // shift chosen attIndex out of window
+//                attIndicesWindow[chosenIndex] = attIndicesWindow[windowSize - 1];
+//                attIndicesWindow[windowSize - 1] = attIndex;
+//                windowSize--;
+//
+//                double currSplit =
+//                        data.classAttribute().isNominal() ? distribution(props, dists,
+//                                attIndex, data) : numericDistribution(props, dists, attIndex,
+//                                totalSubsetWeights, data, tempNumericVals);
+//
+//                double currVal =
+//                        data.classAttribute().isNominal() ? gain(dists[0], priorVal(dists[0]))
+//                                : tempNumericVals[attIndex];
+//
+//                if (Utils.gr(currVal, 0)) {
+//                    gainFound = true;
+//                }
+//
+//                if ((currVal > val)
+//                        || ((!getBreakTiesRandomly()) && (currVal == val) && (attIndex < bestIndex))) {
+//                    val = currVal;
+//                    bestIndex = attIndex;
+//                    split = currSplit;
+//                    bestProps = props[0];
+//                    bestDists = dists[0];
+//                }
+//            }
 
             // Find best attribute
             m_Attribute = bestIndex;
 
             // Any useful split found?
-            if (Utils.gr(val, 0)) {
-                if (m_computeImpurityDecreases) {
-                    m_impurityDecreasees[m_Attribute][0] += val;
-                    m_impurityDecreasees[m_Attribute][1]++;
-                }
+//            if (Utils.gr(val, 0)) {
+//                if (m_computeImpurityDecreases) {
+//                    m_impurityDecreasees[m_Attribute][0] += val;
+//                    m_impurityDecreasees[m_Attribute][1]++;
+//                }
+//
+//                // Build subtrees
+//                m_SplitPoint = split;
+//                m_Prop = bestProps;
+//            Instances[] subsets = splitData(data); //zmiana na nasz split
+            //todo nasz split
+            Instances[] subsets = splitDataWithBestPairs(data, topScoringPairs);
+            //budowanko drzewka
+            m_Successors = new Tree[subsets.length];
+            for (int i = 0; i < subsets.length; i++) {
+                m_Successors[i] = new Tree();
+                double[] temp_props = new double[1];
 
-                // Build subtrees
-                m_SplitPoint = split;
-                m_Prop = bestProps;
-                Instances[] subsets = splitData(data);
-                m_Successors = new Tree[bestDists.length];
-                double[] attTotalSubsetWeights = totalSubsetWeights[bestIndex];
+                m_Successors[i].buildTree(subsets[i], temp_props, attIndicesWindow,
+                        totalWeight, random, depth + 1, minVariance, countAvg(subsets[i]));
+            }
 
-                for (int i = 0; i < bestDists.length; i++) {
-                    m_Successors[i] = new Tree();
-                    m_Successors[i].buildTree(subsets[i], bestDists[i], attIndicesWindow,
-                            data.classAttribute().isNominal() ? 0 : attTotalSubsetWeights[i],
-                            random, depth + 1, minVariance, srednie);
-                }
+//            m_Successors = new Tree[bestDists.length];
+//            double[] attTotalSubsetWeights = totalSubsetWeights[bestIndex];
 
-                // If all successors are non-empty, we don't need to store the class
-                // distribution
-                boolean emptySuccessor = false;
-                for (int i = 0; i < subsets.length; i++) {
-                    if (m_Successors[i].m_ClassDistribution == null) {
-                        emptySuccessor = true;
-                        break;
-                    }
-                }
-                if (emptySuccessor) {
-                    m_ClassDistribution = classProbs.clone();
-                }
-            } else {
+//            for (int i = 0; i < bestDists.length; i++) {
+//                m_Successors[i] = new Tree();
+//                m_Successors[i].buildTree(subsets[i], bestDists[i], attIndicesWindow,
+//                        data.classAttribute().isNominal() ? 0 : attTotalSubsetWeights[i],
+//                        random, depth + 1, minVariance, srednie);
+//            }
 
-                // Make leaf
-                m_Attribute = -1;
-                m_ClassDistribution = classProbs.clone();
-                if (data.classAttribute().isNumeric()) {
-                    m_Distribution = new double[2];
-                    m_Distribution[0] = priorVar;
-                    m_Distribution[1] = totalWeight;
+            // If all successors are non-empty, we don't need to store the class
+            // distribution
+            boolean emptySuccessor = false;
+            for (int i = 0; i < subsets.length; i++) {
+                if (m_Successors[i].m_ClassDistribution == null) {
+                    emptySuccessor = true;
+                    break;
                 }
             }
+            if (emptySuccessor) {
+                m_ClassDistribution = classProbs.clone();
+            }
+//            } else {
+//
+//                // Make leaf
+//                m_Attribute = -1;
+//                m_ClassDistribution = classProbs.clone();
+//                if (data.classAttribute().isNumeric()) {
+//                    m_Distribution = new double[2];
+//                    m_Distribution[0] = priorVar;
+//                    m_Distribution[1] = totalWeight;
+//                }
+//            }
+        }
+
+        private Instances[] splitDataWithBestPairs(Instances data, List<PairHolder> topScoringPairs) {
+            // Allocate array of Instances objects
+            Instances[] subsets = new Instances[data.numClasses()];
+            for (int i = 0; i < data.numClasses(); i++) {
+                subsets[i] = new Instances(data, data.numInstances());
+            }
+
+            // Go through the data
+            for (int i = 0; i < data.numInstances(); i++) {
+
+                // Get instance
+                Instance inst = data.instance(i);
+
+
+                // Do we have a numeric attribute?
+                if (data.attribute(m_Attribute).isNumeric()) {
+                    boolean isCondition = true;
+                    for (PairHolder topScoringPair : topScoringPairs) {
+                        if (!isCondition) {
+                            break;
+                        } else if (!(inst.value(topScoringPair.atributeIndex1) >
+                                topScoringPair.wspolczynnik * inst.value(topScoringPair.atributeIndex2))) {
+                            isCondition = false;
+                        }
+                    }
+                    //jezeli spelnia warunki to lece na lewo inaczej na prawo ziommm
+                    subsets[(isCondition) ? 0 : 1].add(inst);
+
+                    // Proceed to next instance
+                    continue;
+                }
+
+                // Else throw an exception
+                throw new IllegalArgumentException("Unknown attribute type");
+            }
+
+            // Save memory
+            for (int i = 0; i < data.numClasses(); i++) {
+                subsets[i].compactify();
+            }
+
+            // Return the subsets
+            return subsets;
+        }
+
+        private List<PairHolder> getUniquePairs(List<PairHolder> pairHolders, int m_kTopScoringPairs) {
+            ArrayList<PairHolder> holders = new ArrayList<>();
+            int i = 0;
+            while (holders.size() != m_kTopScoringPairs) {
+                if (pairHolders.size() == i) {
+                    break;
+                }
+                PairHolder pairHolder = pairHolders.get(i);
+                if (holders.stream().anyMatch(p -> p.atributeIndex1 == pairHolder.atributeIndex1
+                        || p.atributeIndex2 == pairHolder.atributeIndex2
+                        || p.atributeIndex1 == pairHolder.atributeIndex2
+                        || p.atributeIndex2 == pairHolder.atributeIndex1)) {
+                    i++;
+                } else {
+                    i++;
+                    holders.add(pairHolder);
+                }
+            }
+
+            return holders;
         }
 
         /**
