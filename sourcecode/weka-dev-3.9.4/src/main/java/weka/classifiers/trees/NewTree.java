@@ -27,6 +27,7 @@ import weka.core.*;
 import weka.core.Capabilities.Capability;
 import weka.gui.ProgrammaticProperty;
 
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.util.Queue;
 import java.util.*;
@@ -202,7 +203,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
     /**
      * Determines how many top scoring pairs are going to be chosen
      */
-    protected int m_kTopScoringPairs = 3;
+    protected int m_kTopScoringPairs = 1;
 
     /**
      * Returns a string describing classifier
@@ -500,7 +501,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
     }
 
     public void setUniquePairs(boolean uniquePairs) {
-        this.m_uniquePairs = m_uniquePairs;
+        this.m_uniquePairs = uniquePairs;
     }
 
     public int getKTopScoringPairs() {
@@ -508,7 +509,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
     }
 
     public void setKTopScoringPairs(int kTopScoringPairs) {
-        this.m_kTopScoringPairs = m_kTopScoringPairs;
+        this.m_kTopScoringPairs = kTopScoringPairs;
     }
 
     /**
@@ -1534,7 +1535,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             if (totalWeight < 2 * m_MinNum ||
 
                     // Nominal case
-                    (data.classAttribute().isNominal() && Utils.eq(
+                    (data.classAttribute().isNominal() && Utils.eq( //SPRAWDZAMY CZY WSZYSTKIE DANE NALEŻĄ DO JEDNEJ KLASY
                             classProbs[Utils.maxIndex(classProbs)], Utils.sum(classProbs)))
 
                     ||
@@ -1618,6 +1619,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             Collections.sort(pairHolders, new Comparator<PairHolder>() {
                 @Override
                 public int compare(PairHolder o1, PairHolder o2) {
+                    if(o1 == null || o2 == null) throw new RuntimeException("Nie mogę porównać nulli :)");
                     return -Double.compare(o1.getDelta(), o2.getDelta());
                 }
             });
@@ -1646,7 +1648,12 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             m_Successors = new Tree[subsets.length];
             for (int i = 0; i < subsets.length; i++) {
                 m_Successors[i] = new Tree();
-                double[] temp_props = new double[1];
+                double[] temp_props = new double[subsets[i].numClasses()];
+                for (int idx = 0; idx < subsets[i].numInstances(); idx++) {
+                    Instance instance = subsets[i].get(idx);
+                    temp_props[(int) instance.classValue()] += 1.0;
+                }
+
 
                 m_Successors[i].buildTree(subsets[i], temp_props, attIndicesWindow,
                         totalWeight, random, depth + 1, minVariance, countAvg(subsets[i]));
