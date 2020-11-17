@@ -1028,27 +1028,27 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
                 Tree node = queueOfNodes.poll();
 
                 // Is node a leaf?
-                if (node.m_Attribute <= -1) {
-                    continue;
-                }
-
-                // Compute weight distribution
-                double[] weights = new double[node.m_Successors.length];
-                if (instance.isMissing(node.m_Attribute)) {
-                    System.arraycopy(node.m_Prop, 0, weights, 0, node.m_Prop.length);
-                } else if (m_Info.attribute(node.m_Attribute).isNominal()) {
-                    weights[(int) instance.value(node.m_Attribute)] = 1.0;
-                } else {
-                    if (instance.value(node.m_Attribute) < node.m_SplitPoint) {
-                        weights[0] = 1.0;
-                    } else {
-                        weights[1] = 1.0;
-                    }
-                }
-                for (int i = 0; i < node.m_Successors.length; i++) {
-                    queueOfNodes.add(node.m_Successors[i]);
-                    queueOfWeights.add(a[index - 1] * weights[i]);
-                }
+//                if (node.m_Attribute <= -1) {
+//                    continue;
+//                }
+//
+//                // Compute weight distribution
+//                double[] weights = new double[node.m_Successors.length];
+//                if (instance.isMissing(node.m_Attribute)) {
+//                    System.arraycopy(node.m_Prop, 0, weights, 0, node.m_Prop.length);
+//                } else if (m_Info.attribute(node.m_Attribute).isNominal()) {
+//                    weights[(int) instance.value(node.m_Attribute)] = 1.0;
+//                } else {
+//                    if (instance.value(node.m_Attribute) < node.m_SplitPoint) {
+//                        weights[0] = 1.0;
+//                    } else {
+//                        weights[1] = 1.0;
+//                    }
+//                }
+//                for (int i = 0; i < node.m_Successors.length; i++) {
+//                    queueOfNodes.add(node.m_Successors[i]);
+//                    queueOfWeights.add(a[index - 1] * weights[i]);
+//                }
             }
             return a;
         }
@@ -1084,12 +1084,12 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
         /**
          * The attribute to split on.
          */
-        protected int m_Attribute = -1;
+        //protected int m_Attribute = -1;
 
         /**
          * The split point.
          */
-        protected double m_SplitPoint = Double.NaN;
+        //protected double m_SplitPoint = Double.NaN;
 
         /**
          * The proportions of training instances going down each branch.
@@ -1159,65 +1159,65 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
 
             double[] returnedDist = null;
 
-            if (m_Attribute > -1) {
-
-                // Node is not a leaf
-                if (instance.isMissing(m_Attribute)) {
-
-                    // Value is missing
-                    returnedDist = new double[m_Info.numClasses()];
-
-                    // Split instance up
-                    for (int i = 0; i < m_Successors.length; i++) {
-                        double[] help = m_Successors[i].distributionForInstance(instance);
-                        if (help != null) {
-                            for (int j = 0; j < help.length; j++) {
-                                returnedDist[j] += m_Prop[i] * help[j];
-                            }
-                        }
-                    }
-                } else if (m_Info.attribute(m_Attribute).isNominal()) {
-
-                    // For nominal attributes
-                    returnedDist =
-                            m_Successors[(int) instance.value(m_Attribute)]
-                                    .distributionForInstance(instance);
-                } else {
-
-                    // For numeric attributes
-                    if (instance.value(m_Attribute) < m_SplitPoint) {
-                        returnedDist = m_Successors[0].distributionForInstance(instance);
-                    } else {
-                        returnedDist = m_Successors[1].distributionForInstance(instance);
-                    }
-                }
-            }
-
-            // Node is a leaf or successor is empty?
-            if ((m_Attribute == -1) || (returnedDist == null)) {
-
-                // Is node empty?
-                if (m_ClassDistribution == null) {
-                    if (getAllowUnclassifiedInstances()) {
-                        double[] result = new double[m_Info.numClasses()];
-                        if (m_Info.classAttribute().isNumeric()) {
-                            result[0] = Utils.missingValue();
-                        }
-                        return result;
-                    } else {
-                        return null;
-                    }
-                }
-
-                // Else return normalized distribution
-                double[] normalizedDistribution = m_ClassDistribution.clone();
-                if (m_Info.classAttribute().isNominal()) {
-                    Utils.normalize(normalizedDistribution);
-                }
-                return normalizedDistribution;
-            } else {
-                return returnedDist;
-            }
+//            if (m_Attribute > -1) {
+//
+//                // Node is not a leaf
+//                if (instance.isMissing(m_Attribute)) {
+//
+//                    // Value is missing
+//                    returnedDist = new double[m_Info.numClasses()];
+//
+//                    // Split instance up
+//                    for (int i = 0; i < m_Successors.length; i++) {
+//                        double[] help = m_Successors[i].distributionForInstance(instance);
+//                        if (help != null) {
+//                            for (int j = 0; j < help.length; j++) {
+//                                returnedDist[j] += m_Prop[i] * help[j];
+//                            }
+//                        }
+//                    }
+//                } else if (m_Info.attribute(m_Attribute).isNominal()) {
+//
+//                    // For nominal attributes
+//                    returnedDist =
+//                            m_Successors[(int) instance.value(m_Attribute)]
+//                                    .distributionForInstance(instance);
+//                } else {
+//
+//                    // For numeric attributes
+//                    if (instance.value(m_Attribute) < m_SplitPoint) {
+//                        returnedDist = m_Successors[0].distributionForInstance(instance);
+//                    } else {
+//                        returnedDist = m_Successors[1].distributionForInstance(instance);
+//                    }
+//                }
+//            }
+//
+//            // Node is a leaf or successor is empty?
+//            if ((m_Attribute == -1) || (returnedDist == null)) {
+//
+//                // Is node empty?
+//                if (m_ClassDistribution == null) {
+//                    if (getAllowUnclassifiedInstances()) {
+//                        double[] result = new double[m_Info.numClasses()];
+//                        if (m_Info.classAttribute().isNumeric()) {
+//                            result[0] = Utils.missingValue();
+//                        }
+//                        return result;
+//                    } else {
+//                        return null;
+//                    }
+//                }
+//
+//                // Else return normalized distribution
+//                double[] normalizedDistribution = m_ClassDistribution.clone();
+//                if (m_Info.classAttribute().isNominal()) {
+//                    Utils.normalize(normalizedDistribution);
+//                }
+//                return normalizedDistribution;
+//            } else {
+            return returnedDist;
+//            }
         }
 
         /**
@@ -1231,37 +1231,37 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
         public int toGraph(StringBuffer text, int num) throws Exception {
 
             int maxIndex = Utils.maxIndex(m_ClassDistribution);
-            String classValue =
-                    m_Info.classAttribute().isNominal() ? m_Info.classAttribute().value(
-                            maxIndex) : Utils.doubleToString(m_ClassDistribution[0],
-                            getNumDecimalPlaces());
-
-            num++;
-            if (m_Attribute == -1) {
-                text.append("N" + Integer.toHexString(hashCode()) + " [label=\"" + num
-                        + ": " + classValue + "\"" + "shape=box]\n");
-            } else {
-                text.append("N" + Integer.toHexString(hashCode()) + " [label=\"" + num
-                        + ": " + classValue + "\"]\n");
-                for (int i = 0; i < m_Successors.length; i++) {
-                    text.append("N" + Integer.toHexString(hashCode()) + "->" + "N"
-                            + Integer.toHexString(m_Successors[i].hashCode()) + " [label=\""
-                            + m_Info.attribute(m_Attribute).name());
-                    if (m_Info.attribute(m_Attribute).isNumeric()) {
-                        if (i == 0) {
-                            text.append(" < "
-                                    + Utils.doubleToString(m_SplitPoint, getNumDecimalPlaces()));
-                        } else {
-                            text.append(" >= "
-                                    + Utils.doubleToString(m_SplitPoint, getNumDecimalPlaces()));
-                        }
-                    } else {
-                        text.append(" = " + m_Info.attribute(m_Attribute).value(i));
-                    }
-                    text.append("\"]\n");
-                    num = m_Successors[i].toGraph(text, num);
-                }
-            }
+//            String classValue =
+//                    m_Info.classAttribute().isNominal() ? m_Info.classAttribute().value(
+//                            maxIndex) : Utils.doubleToString(m_ClassDistribution[0],
+//                            getNumDecimalPlaces());
+//
+//            num++;
+//            if (m_Attribute == -1) {
+//                text.append("N" + Integer.toHexString(hashCode()) + " [label=\"" + num
+//                        + ": " + classValue + "\"" + "shape=box]\n");
+//            } else {
+//                text.append("N" + Integer.toHexString(hashCode()) + " [label=\"" + num
+//                        + ": " + classValue + "\"]\n");
+//                for (int i = 0; i < m_Successors.length; i++) {
+//                    text.append("N" + Integer.toHexString(hashCode()) + "->" + "N"
+//                            + Integer.toHexString(m_Successors[i].hashCode()) + " [label=\""
+//                            + m_Info.attribute(m_Attribute).name());
+//                    if (m_Info.attribute(m_Attribute).isNumeric()) {
+//                        if (i == 0) {
+//                            text.append(" < "
+//                                    + Utils.doubleToString(m_SplitPoint, getNumDecimalPlaces()));
+//                        } else {
+//                            text.append(" >= "
+//                                    + Utils.doubleToString(m_SplitPoint, getNumDecimalPlaces()));
+//                        }
+//                    } else {
+//                        text.append(" = " + m_Info.attribute(m_Attribute).value(i));
+//                    }
+//                    text.append("\"]\n");
+//                    num = m_Successors[i].toGraph(text, num);
+//                }
+//            }
 
             return num;
         }
@@ -1371,7 +1371,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
 
             // Make leaf if there are no training instances
             if (data.numInstances() == 0) {
-                m_Attribute = -1;
+                //m_Attribute = -1;
                 m_ClassDistribution = null;
                 if (data.classAttribute().isNumeric()) {
                     m_Distribution = new double[2];
@@ -1410,92 +1410,92 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
              */
 
             // Are we at an inner node
-            if (m_Attribute > -1) {
+//            if (m_Attribute > -1) {
+//
+//                // Compute new weights for subsets based on backfit data
+//                m_Prop = new double[m_Successors.length];
+//                for (int i = 0; i < data.numInstances(); i++) {
+//                    Instance inst = data.instance(i);
+//                    if (!inst.isMissing(m_Attribute)) {
+//                        if (data.attribute(m_Attribute).isNominal()) {
+//                            m_Prop[(int) inst.value(m_Attribute)] += inst.weight();
+//                        } else {
+//                            m_Prop[(inst.value(m_Attribute) < m_SplitPoint) ? 0 : 1] +=
+//                                    inst.weight();
+//                        }
+//                    }
+//                }
+//
+//                // If we only have missing values we can make this node into a leaf
+//                if (Utils.sum(m_Prop) <= 0) {
+//                    m_Attribute = -1;
+//                    m_Prop = null;
+//
+//                    if (data.classAttribute().isNumeric()) {
+//                        m_Distribution = new double[2];
+//                        m_Distribution[0] = priorVar;
+//                        m_Distribution[1] = totalWeight;
+//                    }
+//
+//                    return;
+//                }
+//
+//                // Otherwise normalize the proportions
+//                Utils.normalize(m_Prop);
+//
+//                // Split data
+//                Instances[] subsets = splitData(data);
+//
+//                // Go through subsets
+//                for (int i = 0; i < subsets.length; i++) {
+//
+//                    // Compute distribution for current subset
+//                    double[] dist = new double[data.numClasses()];
+//                    double sumOfWeights = 0;
+//                    for (int j = 0; j < subsets[i].numInstances(); j++) {
+//                        if (data.classAttribute().isNominal()) {
+//                            dist[(int) subsets[i].instance(j).classValue()] +=
+//                                    subsets[i].instance(j).weight();
+//                        } else {
+//                            dist[0] +=
+//                                    subsets[i].instance(j).classValue()
+//                                            * subsets[i].instance(j).weight();
+//                            sumOfWeights += subsets[i].instance(j).weight();
+//                        }
+//                    }
+//
+//                    if (sumOfWeights > 0) {
+//                        dist[0] /= sumOfWeights;
+//                    }
+//
+//                    // Backfit subset
+//                    m_Successors[i].backfitData(subsets[i], dist, totalWeight);
+//                }
+//
+//                // If unclassified instances are allowed, we don't need to store the
+//                // class distribution
+//                if (getAllowUnclassifiedInstances()) {
+//                    m_ClassDistribution = null;
+//                    return;
+//                }
+//
+//                for (int i = 0; i < subsets.length; i++) {
+//                    if (m_Successors[i].m_ClassDistribution == null) {
+//                        return;
+//                    }
+//                }
+//                m_ClassDistribution = null;
 
-                // Compute new weights for subsets based on backfit data
-                m_Prop = new double[m_Successors.length];
-                for (int i = 0; i < data.numInstances(); i++) {
-                    Instance inst = data.instance(i);
-                    if (!inst.isMissing(m_Attribute)) {
-                        if (data.attribute(m_Attribute).isNominal()) {
-                            m_Prop[(int) inst.value(m_Attribute)] += inst.weight();
-                        } else {
-                            m_Prop[(inst.value(m_Attribute) < m_SplitPoint) ? 0 : 1] +=
-                                    inst.weight();
-                        }
-                    }
-                }
-
-                // If we only have missing values we can make this node into a leaf
-                if (Utils.sum(m_Prop) <= 0) {
-                    m_Attribute = -1;
-                    m_Prop = null;
-
-                    if (data.classAttribute().isNumeric()) {
-                        m_Distribution = new double[2];
-                        m_Distribution[0] = priorVar;
-                        m_Distribution[1] = totalWeight;
-                    }
-
-                    return;
-                }
-
-                // Otherwise normalize the proportions
-                Utils.normalize(m_Prop);
-
-                // Split data
-                Instances[] subsets = splitData(data);
-
-                // Go through subsets
-                for (int i = 0; i < subsets.length; i++) {
-
-                    // Compute distribution for current subset
-                    double[] dist = new double[data.numClasses()];
-                    double sumOfWeights = 0;
-                    for (int j = 0; j < subsets[i].numInstances(); j++) {
-                        if (data.classAttribute().isNominal()) {
-                            dist[(int) subsets[i].instance(j).classValue()] +=
-                                    subsets[i].instance(j).weight();
-                        } else {
-                            dist[0] +=
-                                    subsets[i].instance(j).classValue()
-                                            * subsets[i].instance(j).weight();
-                            sumOfWeights += subsets[i].instance(j).weight();
-                        }
-                    }
-
-                    if (sumOfWeights > 0) {
-                        dist[0] /= sumOfWeights;
-                    }
-
-                    // Backfit subset
-                    m_Successors[i].backfitData(subsets[i], dist, totalWeight);
-                }
-
-                // If unclassified instances are allowed, we don't need to store the
-                // class distribution
-                if (getAllowUnclassifiedInstances()) {
-                    m_ClassDistribution = null;
-                    return;
-                }
-
-                for (int i = 0; i < subsets.length; i++) {
-                    if (m_Successors[i].m_ClassDistribution == null) {
-                        return;
-                    }
-                }
-                m_ClassDistribution = null;
-
-                // If we have a least two non-empty successors, we should keep this tree
-                /*
-                 * int nonEmptySuccessors = 0; for (int i = 0; i < subsets.length; i++)
-                 * { if (m_Successors[i].m_ClassDistribution != null) {
-                 * nonEmptySuccessors++; if (nonEmptySuccessors > 1) { return; } } }
-                 *
-                 * // Otherwise, this node is a leaf or should become a leaf
-                 * m_Successors = null; m_Attribute = -1; m_Prop = null; return;
-                 */
-            }
+            // If we have a least two non-empty successors, we should keep this tree
+            /*
+             * int nonEmptySuccessors = 0; for (int i = 0; i < subsets.length; i++)
+             * { if (m_Successors[i].m_ClassDistribution != null) {
+             * nonEmptySuccessors++; if (nonEmptySuccessors > 1) { return; } } }
+             *
+             * // Otherwise, this node is a leaf or should become a leaf
+             * m_Successors = null; m_Attribute = -1; m_Prop = null; return;
+             */
+//            }
         }
 
         /**
@@ -1514,7 +1514,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
 
             // Make leaf if there are no training instances
             if (data.numInstances() == 0) {
-                m_Attribute = -1;
+                //m_Attribute = -1;
                 m_ClassDistribution = null;
                 m_Prop = null;
 
@@ -1549,7 +1549,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
                     ((getMaxDepth() > 0) && (depth >= getMaxDepth()))) {
 
                 // Make leaf
-                m_Attribute = -1;
+                //m_Attribute = -1;
                 m_ClassDistribution = classProbs.clone();
                 if (data.classAttribute().isNumeric()) {
                     m_Distribution = new double[2];
@@ -1640,7 +1640,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
 
             // Find best attribute
             m_kBestPairs = topScoringPairs;
-            m_Attribute = bestIndex;
+            //m_Attribute = bestIndex;
 
             //todo nasz split
             Instances[] subsets = splitDataWithBestPairs(data, topScoringPairs);
@@ -1673,7 +1673,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             } else {
 
                 // Make leaf
-                m_Attribute = -1;
+                //m_Attribute = -1;
                 m_ClassDistribution = classProbs.clone();
                 if (data.classAttribute().isNumeric()) {
                     m_Distribution = new double[2];
@@ -1696,27 +1696,18 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
                 // Get instance
                 Instance inst = data.instance(i);
 
-
-                // Do we have a numeric attribute?
-                if (data.attribute(m_Attribute).isNumeric()) {
-                    boolean isCondition = true;
-                    for (PairHolder topScoringPair : topScoringPairs) {
-                        if (!isCondition) {
-                            break;
-                        } else if (!(inst.value(topScoringPair.atributeIndex1) >
-                                topScoringPair.wspolczynnik * inst.value(topScoringPair.atributeIndex2))) {
-                            isCondition = false;
-                        }
+                boolean isCondition = true;
+                for (PairHolder topScoringPair : topScoringPairs) {
+                    if (!isCondition) {
+                        break;
+                    } else if (!(inst.value(topScoringPair.atributeIndex1) >
+                            topScoringPair.wspolczynnik * inst.value(topScoringPair.atributeIndex2))) {
+                        isCondition = false;
                     }
-                    //jezeli spelnia warunki to lece na lewo inaczej na prawo ziommm
-                    subsets[(isCondition) ? 0 : 1].add(inst);
-
-                    // Proceed to next instance
-                    continue;
                 }
+                //jezeli spelnia warunki to lece na lewo inaczej na prawo ziommm
+                subsets[(isCondition) ? 0 : 1].add(inst);
 
-                // Else throw an exception
-                throw new IllegalArgumentException("Unknown attribute type");
             }
 
             // Save memory
@@ -1756,16 +1747,14 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
          * @return the number of nodes
          */
         public int numNodes() {
-
-            if (m_Attribute == -1) {
+            if (m_Successors == null)
                 return 1;
-            } else {
-                int size = 1;
-                for (Tree m_Successor : m_Successors) {
-                    size += m_Successor.numNodes();
-                }
-                return size;
+
+            int size = 1;
+            for (Tree m_Successor : m_Successors) {
+                size += m_Successor.numNodes();
             }
+            return size;
         }
 
         /**
@@ -1779,56 +1768,56 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
 
             // Allocate array of Instances objects
             Instances[] subsets = new Instances[m_Prop.length];
-            for (int i = 0; i < m_Prop.length; i++) {
-                subsets[i] = new Instances(data, data.numInstances());
-            }
-
-            // Go through the data
-            for (int i = 0; i < data.numInstances(); i++) {
-
-                // Get instance
-                Instance inst = data.instance(i);
-
-                // Does the instance have a missing value?
-                if (inst.isMissing(m_Attribute)) {
-
-                    // Split instance up
-                    for (int k = 0; k < m_Prop.length; k++) {
-                        if (m_Prop[k] > 0) {
-                            Instance copy = (Instance) inst.copy();
-                            copy.setWeight(m_Prop[k] * inst.weight());
-                            subsets[k].add(copy);
-                        }
-                    }
-
-                    // Proceed to next instance
-                    continue;
-                }
-
-                // Do we have a nominal attribute?
-                if (data.attribute(m_Attribute).isNominal()) {
-                    subsets[(int) inst.value(m_Attribute)].add(inst);
-
-                    // Proceed to next instance
-                    continue;
-                }
-
-                // Do we have a numeric attribute?
-                if (data.attribute(m_Attribute).isNumeric()) {
-                    subsets[(inst.value(m_Attribute) < m_SplitPoint) ? 0 : 1].add(inst);
-
-                    // Proceed to next instance
-                    continue;
-                }
-
-                // Else throw an exception
-                throw new IllegalArgumentException("Unknown attribute type");
-            }
-
-            // Save memory
-            for (int i = 0; i < m_Prop.length; i++) {
-                subsets[i].compactify();
-            }
+//            for (int i = 0; i < m_Prop.length; i++) {
+//                subsets[i] = new Instances(data, data.numInstances());
+//            }
+//
+//            // Go through the data
+//            for (int i = 0; i < data.numInstances(); i++) {
+//
+//                // Get instance
+//                Instance inst = data.instance(i);
+//
+//                // Does the instance have a missing value?
+//                if (inst.isMissing(m_Attribute)) {
+//
+//                    // Split instance up
+//                    for (int k = 0; k < m_Prop.length; k++) {
+//                        if (m_Prop[k] > 0) {
+//                            Instance copy = (Instance) inst.copy();
+//                            copy.setWeight(m_Prop[k] * inst.weight());
+//                            subsets[k].add(copy);
+//                        }
+//                    }
+//
+//                    // Proceed to next instance
+//                    continue;
+//                }
+//
+//                // Do we have a nominal attribute?
+//                if (data.attribute(m_Attribute).isNominal()) {
+//                    subsets[(int) inst.value(m_Attribute)].add(inst);
+//
+//                    // Proceed to next instance
+//                    continue;
+//                }
+//
+//                // Do we have a numeric attribute?
+//                if (data.attribute(m_Attribute).isNumeric()) {
+//                    subsets[(inst.value(m_Attribute) < m_SplitPoint) ? 0 : 1].add(inst);
+//
+//                    // Proceed to next instance
+//                    continue;
+//                }
+//
+//                // Else throw an exception
+//                throw new IllegalArgumentException("Unknown attribute type");
+//            }
+//
+//            // Save memory
+//            for (int i = 0; i < m_Prop.length; i++) {
+//                subsets[i].compactify();
+//            }
 
             // Return the subsets
             return subsets;
