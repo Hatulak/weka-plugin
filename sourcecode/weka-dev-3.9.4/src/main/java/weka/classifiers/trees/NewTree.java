@@ -1619,7 +1619,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             Collections.sort(pairHolders, new Comparator<PairHolder>() {
                 @Override
                 public int compare(PairHolder o1, PairHolder o2) {
-                    if(o1 == null || o2 == null) throw new RuntimeException("Nie mogę porównać nulli :)");
+                    if (o1 == null || o2 == null) throw new RuntimeException("Nie mogę porównać nulli :)");
                     return -Double.compare(o1.getDelta(), o2.getDelta());
                 }
             });
@@ -2206,36 +2206,69 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
                 throws Exception {
 
             num++;
-            if (m_Attribute == -1) {
+            if (m_kBestPairs.size() == 0) {
+
+                // Leaf
                 text.append("N" + Integer.toHexString(Tree.this.hashCode())
                         + " [label=\"" + num + Utils.backQuoteChars(leafString()) + "\""
                         + " shape=box]\n");
-
             } else {
                 text.append("N" + Integer.toHexString(Tree.this.hashCode())
-                        + " [label=\"" + num + ": "
-                        + Utils.backQuoteChars(m_Info.attribute(m_Attribute).name())
-                        + "\"]\n");
+                        + " [label=\"" + num + ": ");
+                m_kBestPairs.forEach(bestPair -> {
+                    text.append(Utils.backQuoteChars(m_Info.attribute(bestPair.atributeIndex1).name())
+                            + " GT " + bestPair.getWspolczynnik() + " X ");
+                    text.append(Utils.backQuoteChars(m_Info.attribute(bestPair.atributeIndex2).name()) + " | ");
+                });
+                text.append("\"shape=box]\n");
+
                 for (int i = 0; i < m_Successors.length; i++) {
                     text.append("N" + Integer.toHexString(Tree.this.hashCode()) + "->"
                             + "N" + Integer.toHexString(m_Successors[i].hashCode())
                             + " [label=\"");
-                    if (m_Info.attribute(m_Attribute).isNumeric()) {
-                        if (i == 0) {
-                            text.append(" < "
-                                    + Utils.doubleToString(m_SplitPoint, getNumDecimalPlaces()));
-                        } else {
-                            text.append(" >= "
-                                    + Utils.doubleToString(m_SplitPoint, getNumDecimalPlaces()));
-                        }
+                    if (i == 0) {
+                        text.append(" TRUE ");
                     } else {
-                        text.append(" = "
-                                + Utils.backQuoteChars(m_Info.attribute(m_Attribute).value(i)));
+                        text.append(" FALSE ");
                     }
                     text.append("\"]\n");
                     num = m_Successors[i].toGraph(text, num, this);
                 }
             }
+
+
+//            num++;
+//            if (m_Attribute == -1) {
+//                text.append("N" + Integer.toHexString(Tree.this.hashCode())
+//                        + " [label=\"" + num + Utils.backQuoteChars(leafString()) + "\""
+//                        + " shape=box]\n");
+//
+//            } else {
+//
+//                text.append("N" + Integer.toHexString(Tree.this.hashCode())
+//                        + " [label=\"" + num + ": "
+//                        + Utils.backQuoteChars(m_Info.attribute(m_Attribute).name())
+//                        + "\"]\n");
+//            for (int i = 0; i < m_Successors.length; i++) {
+//                text.append("N" + Integer.toHexString(Tree.this.hashCode()) + "->"
+//                        + "N" + Integer.toHexString(m_Successors[i].hashCode())
+//                        + " [label=\"");
+//                if (m_Info.attribute(m_Attribute).isNumeric()) {
+//                    if (i == 0) {
+//                        text.append(" < "
+//                                + Utils.doubleToString(m_SplitPoint, getNumDecimalPlaces()));
+//                    } else {
+//                        text.append(" >= "
+//                                + Utils.doubleToString(m_SplitPoint, getNumDecimalPlaces()));
+//                    }
+//                } else {
+//                    text.append(" = "
+//                            + Utils.backQuoteChars(m_Info.attribute(m_Attribute).value(i)));
+//                }
+//                text.append("\"]\n");
+//                num = m_Successors[i].toGraph(text, num, this);
+//            }
+//        }
 
             return num;
         }
@@ -2249,8 +2282,8 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             public PairHolder(int atributeIndex1, int atributeIndex2, double wspolczynnik, double delta) {
                 this.atributeIndex1 = atributeIndex1;
                 this.atributeIndex2 = atributeIndex2;
-                this.wspolczynnik = wspolczynnik;
-                this.delta = delta;
+                this.wspolczynnik = (double) Math.round(wspolczynnik * 100) / 100;
+                this.delta = (double) Math.round(delta * 100) / 100;
             }
 
             public int getAtributeIndex1() {
@@ -2279,6 +2312,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
                         '}';
             }
         }
+
     }
 
     /**
