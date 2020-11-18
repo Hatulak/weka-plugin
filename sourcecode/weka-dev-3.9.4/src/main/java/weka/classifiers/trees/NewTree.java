@@ -1160,12 +1160,12 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             double[] returnedDist = null;
 
             if (m_Attribute > -1) {
-                    // For numeric attributes
-                    if (instance.value(m_Attribute) < m_SplitPoint) {
-                        returnedDist = m_Successors[0].distributionForInstance(instance);
-                    } else {
-                        returnedDist = m_Successors[1].distributionForInstance(instance);
-                    }
+                // For numeric attributes
+                if (instance.value(m_Attribute) < m_SplitPoint) {
+                    returnedDist = m_Successors[0].distributionForInstance(instance);
+                } else {
+                    returnedDist = m_Successors[1].distributionForInstance(instance);
+                }
             }
 
             // Node is a leaf or successor is empty?
@@ -1191,7 +1191,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
                 }
                 return normalizedDistribution;
             } else {
-            return returnedDist;
+                return returnedDist;
             }
         }
 
@@ -1660,6 +1660,8 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
 
         private Instances[] splitDataWithBestPairs(Instances data, List<PairHolder> topScoringPairs) {
             // Allocate array of Instances objects
+            int min_conditions = topScoringPairs.size() / 2 + 1; //todo w przypadku gdy k jest parzyste, brać k/2 czy k/2+1
+            int met_conditions = 0;
             Instances[] subsets = new Instances[data.numClasses()];
             for (int i = 0; i < data.numClasses(); i++) {
                 subsets[i] = new Instances(data, data.numInstances());
@@ -1671,17 +1673,15 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
                 // Get instance
                 Instance inst = data.instance(i);
 
-                boolean isCondition = true;
+                met_conditions = 0;
                 for (PairHolder topScoringPair : topScoringPairs) {
-                    if (!isCondition) {
-                        break;
-                    } else if (!(inst.value(topScoringPair.atributeIndex1) >
+                    if ((inst.value(topScoringPair.atributeIndex1) >
                             topScoringPair.wspolczynnik * inst.value(topScoringPair.atributeIndex2))) {
-                        isCondition = false;
+                        met_conditions += 1;
                     }
                 }
-                //jezeli spelnia warunki to lece na lewo inaczej na prawo ziommm
-                subsets[(isCondition) ? 0 : 1].add(inst);
+                //jezeli spelnia warunki to lece na lewo inaczej na prawo
+                subsets[(met_conditions >= min_conditions) ? 0 : 1].add(inst);
 
             }
 
