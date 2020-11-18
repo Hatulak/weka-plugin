@@ -1685,6 +1685,8 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
 
         private Instances[] splitDataWithBestPairs(Instances data, List<PairHolder> topScoringPairs) {
             // Allocate array of Instances objects
+            int min_conditions = topScoringPairs.size() / 2 + 1; //todo w przypadku gdy k jest parzyste, brać k/2 czy k/2+1
+            int met_conditions = 0;
             Instances[] subsets = new Instances[data.numClasses()];
             for (int i = 0; i < data.numClasses(); i++) {
                 subsets[i] = new Instances(data, data.numInstances());
@@ -1696,20 +1698,25 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
                 // Get instance
                 Instance inst = data.instance(i);
 
-
+                met_conditions = 0;
                 // Do we have a numeric attribute?
                 if (data.attribute(m_Attribute).isNumeric()) {
-                    boolean isCondition = true;
-                    for (PairHolder topScoringPair : topScoringPairs) {
+                    for (PairHolder topScoringPair : topScoringPairs){
+                        if ((inst.value(topScoringPair.atributeIndex1) >
+                                topScoringPair.wspolczynnik * inst.value(topScoringPair.atributeIndex2))) {
+                            met_conditions+=1;
+                        }
+                    }
+                    /*for (PairHolder topScoringPair : topScoringPairs) {
                         if (!isCondition) {
                             break;
                         } else if (!(inst.value(topScoringPair.atributeIndex1) >
                                 topScoringPair.wspolczynnik * inst.value(topScoringPair.atributeIndex2))) {
                             isCondition = false;
                         }
-                    }
-                    //jezeli spelnia warunki to lece na lewo inaczej na prawo ziommm
-                    subsets[(isCondition) ? 0 : 1].add(inst);
+                    }*/
+                    //jezeli spelnia warunki to lece na lewo inaczej na prawo
+                    subsets[(met_conditions >= min_conditions) ? 0 : 1].add(inst);
 
                     // Proceed to next instance
                     continue;
