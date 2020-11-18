@@ -1148,6 +1148,10 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             backfitData(data, classProbs, totalWeight);
         }
 
+        private int getMinConditions(){
+            return m_kBestPairs.size() / 2 + 1;
+        }
+
         /**
          * Computes class distribution of an instance using the decision tree.
          *
@@ -1159,9 +1163,20 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
 
             double[] returnedDist = null;
 
-            if (m_Attribute > -1) {
+            if (m_kBestPairs.size() != 0) {
                 // For numeric attributes
-                if (instance.value(m_Attribute) < m_SplitPoint) {
+
+                int met_conditions = 0;
+                int min_conditions = getMinConditions();
+
+                for (PairHolder topScoringPair : m_kBestPairs) {
+                    if ((instance.value(topScoringPair.atributeIndex1) >
+                            topScoringPair.wspolczynnik * instance.value(topScoringPair.atributeIndex2))) {
+                        met_conditions += 1;
+                    }
+                }
+
+                if (met_conditions >= min_conditions) {
                     returnedDist = m_Successors[0].distributionForInstance(instance);
                 } else {
                     returnedDist = m_Successors[1].distributionForInstance(instance);
@@ -1169,7 +1184,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             }
 
             // Node is a leaf or successor is empty?
-            if ((m_Attribute == -1) || (returnedDist == null)) {
+            if ((m_kBestPairs.size() == 0) || (returnedDist == null)) {
 
                 // Is node empty?
                 if (m_ClassDistribution == null) {
@@ -1660,7 +1675,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
 
         private Instances[] splitDataWithBestPairs(Instances data, List<PairHolder> topScoringPairs) {
             // Allocate array of Instances objects
-            int min_conditions = topScoringPairs.size() / 2 + 1; //todo w przypadku gdy k jest parzyste, brać k/2 czy k/2+1
+            int min_conditions = getMinConditions(); //todo w przypadku gdy k jest parzyste, brać k/2 czy k/2+1
             int met_conditions = 0;
             Instances[] subsets = new Instances[data.numClasses()];
             for (int i = 0; i < data.numClasses(); i++) {
