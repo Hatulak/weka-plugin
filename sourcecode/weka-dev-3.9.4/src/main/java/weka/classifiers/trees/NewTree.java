@@ -27,7 +27,6 @@ import weka.core.*;
 import weka.core.Capabilities.Capability;
 import weka.gui.ProgrammaticProperty;
 
-import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.util.Queue;
 import java.util.*;
@@ -1136,7 +1135,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             }
 
             double trainVariance = 0;
-            if (data.classAttribute().isNumeric()) {
+            if (data.classAttribute().isNumeric()) { // w naszym przypadku klasy nie są numeryczne - to sie nie wykona
                 trainVariance =
                         NewTree
                                 .singleVariance(classProbs[0], totalSumSquared, totalWeight)
@@ -1371,7 +1370,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             }
 
             double priorVar = 0;
-            if (data.classAttribute().isNumeric()) {
+            if (data.classAttribute().isNumeric()) { // nie jest numeryczne  - nie wchodzi
 
                 // Compute prior variance
                 double totalSum = 0, totalSumSquared = 0, totalSumOfWeights = 0;
@@ -1400,11 +1399,11 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
              */
 
             // Are we at an inner node
-//            if (m_Attribute > -1) {
-//
-//                // Compute new weights for subsets based on backfit data
-//                m_Prop = new double[m_Successors.length];
-//                for (int i = 0; i < data.numInstances(); i++) {
+            if (m_kBestPairs.size() != 0) {
+
+                // Compute new weights for subsets based on backfit data
+                m_Prop = new double[m_Successors.length];
+//                for (int i = 0; i < data.numInstances(); i++) { //sprawdzenie czy są brakujące dane
 //                    Instance inst = data.instance(i);
 //                    if (!inst.isMissing(m_Attribute)) {
 //                        if (data.attribute(m_Attribute).isNominal()) {
@@ -1415,66 +1414,73 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
 //                        }
 //                    }
 //                }
-//
-//                // If we only have missing values we can make this node into a leaf
-//                if (Utils.sum(m_Prop) <= 0) {
-//                    m_Attribute = -1;
-//                    m_Prop = null;
-//
-//                    if (data.classAttribute().isNumeric()) {
-//                        m_Distribution = new double[2];
-//                        m_Distribution[0] = priorVar;
-//                        m_Distribution[1] = totalWeight;
-//                    }
-//
-//                    return;
-//                }
-//
-//                // Otherwise normalize the proportions
-//                Utils.normalize(m_Prop);
-//
-//                // Split data
-//                Instances[] subsets = splitData(data);
-//
-//                // Go through subsets
-//                for (int i = 0; i < subsets.length; i++) {
-//
-//                    // Compute distribution for current subset
-//                    double[] dist = new double[data.numClasses()];
-//                    double sumOfWeights = 0;
-//                    for (int j = 0; j < subsets[i].numInstances(); j++) {
-//                        if (data.classAttribute().isNominal()) {
-//                            dist[(int) subsets[i].instance(j).classValue()] +=
-//                                    subsets[i].instance(j).weight();
-//                        } else {
-//                            dist[0] +=
-//                                    subsets[i].instance(j).classValue()
-//                                            * subsets[i].instance(j).weight();
-//                            sumOfWeights += subsets[i].instance(j).weight();
-//                        }
-//                    }
-//
-//                    if (sumOfWeights > 0) {
-//                        dist[0] /= sumOfWeights;
-//                    }
-//
-//                    // Backfit subset
-//                    m_Successors[i].backfitData(subsets[i], dist, totalWeight);
-//                }
-//
-//                // If unclassified instances are allowed, we don't need to store the
-//                // class distribution
-//                if (getAllowUnclassifiedInstances()) {
-//                    m_ClassDistribution = null;
-//                    return;
-//                }
-//
-//                for (int i = 0; i < subsets.length; i++) {
-//                    if (m_Successors[i].m_ClassDistribution == null) {
-//                        return;
-//                    }
-//                }
-//                m_ClassDistribution = null;
+
+                // If we only have missing values we can make this node into a leaf
+                if (Utils.sum(m_Prop) <= 0) {
+                    //m_Attribute = -1;
+                    m_Prop = null;
+
+                    if (data.classAttribute().isNumeric()) {
+                        m_Distribution = new double[2];
+                        m_Distribution[0] = priorVar;
+                        m_Distribution[1] = totalWeight;
+                    }
+
+                    return;
+                }
+
+                // Otherwise normalize the proportions
+                Utils.normalize(m_Prop);
+
+                // Split data
+                int[] attIndicesWindow = new int[data.numAttributes() - 1];
+                int windowSize = attIndicesWindow.length;
+                double [][] srednie = countAvg(data);
+                List<PairHolder> pairHolders = createAttributesPairs(data, attIndicesWindow, srednie);
+
+                List<PairHolder> topScoringPairs = getPairHolders(pairHolders);
+
+                Instances[] subsets = splitDataWithBestPairs(data, topScoringPairs);
+
+                // Go through subsets
+                for (int i = 0; i < subsets.length; i++) {
+
+                    // Compute distribution for current subset
+                    double[] dist = new double[data.numClasses()];
+                    double sumOfWeights = 0;
+                    for (int j = 0; j < subsets[i].numInstances(); j++) {
+                        if (data.classAttribute().isNominal()) {
+                            dist[(int) subsets[i].instance(j).classValue()] +=
+                                    subsets[i].instance(j).weight();
+                        } else {
+                            dist[0] +=
+                                    subsets[i].instance(j).classValue()
+                                            * subsets[i].instance(j).weight();
+                            sumOfWeights += subsets[i].instance(j).weight();
+                        }
+                    }
+
+                    if (sumOfWeights > 0) {
+                        dist[0] /= sumOfWeights;
+                    }
+
+                    // Backfit subset
+                    m_Successors[i].backfitData(subsets[i], dist, totalWeight);
+                }
+
+                // If unclassified instances are allowed, we don't need to store the
+                // class distribution
+                if (getAllowUnclassifiedInstances()) {
+                    m_ClassDistribution = null;
+                    return;
+                }
+
+                for (int i = 0; i < subsets.length; i++) {
+                    if (m_Successors[i].m_ClassDistribution == null) {
+                        return;
+                    }
+                }
+                m_ClassDistribution = null;
 
             // If we have a least two non-empty successors, we should keep this tree
             /*
@@ -1485,7 +1491,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
              * // Otherwise, this node is a leaf or should become a leaf
              * m_Successors = null; m_Attribute = -1; m_Prop = null; return;
              */
-//            }
+            }
         }
 
         /**
@@ -1573,63 +1579,11 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
             int kTSP = m_kTopScoringPairs;
             boolean uniquePairs = m_uniquePairs;
 
-            List<PairHolder> pairHolders = new LinkedList<>();
+            List<PairHolder> pairHolders;
 
-            for (int i = 0; i < windowSize - 1; i++) {
-                for (int j = i + 1; j < windowSize; j++) {
-                    int attIndex1 = attIndicesWindow[i];
-                    int attIndex2 = attIndicesWindow[j];
-                    double wsp = 0;
-                    for (int i1 = 0; i1 < srednie.length; i1++) {
-                        wsp += srednie[i1][attIndex1] / srednie[i1][attIndex2];
-                    }
-                    wsp = wsp / srednie.length;
+            pairHolders = createAttributesPairs(data, attIndicesWindow, srednie);
 
-                    int[] suma = new int[data.numClasses()];
-                    int[] counter = new int[data.numClasses()];
-                    for (int i1 = 0; i1 < data.size(); i1++) {
-                        counter[(int) data.get(i1).classValue()] += 1;
-                        if (data.get(i1).value(attIndex1) > wsp * data.get(i1).value(attIndex2)) {
-                            suma[(int) data.get(i1).classValue()] += 1;
-                        }
-                    }
-
-                    //TODO - zakładamy że mamy 2 klasy
-                    double[] p = new double[data.numClasses()]; // data.numClasses() = 2
-                    p[0] = suma[0] / (double) counter[0];
-                    p[1] = suma[1] / (double) counter[1];
-
-                    double delta = Math.abs(p[0] - p[1]);
-
-                    pairHolders.add(new PairHolder(attIndex1, attIndex2, wsp, delta));
-
-                }
-            }
-
-            Collections.sort(pairHolders, new Comparator<PairHolder>() {
-                @Override
-                public int compare(PairHolder o1, PairHolder o2) {
-                    if (o1 == null || o2 == null) throw new RuntimeException("Nie mogę porównać nulli :)");
-                    return -Double.compare(o1.getDelta(), o2.getDelta());
-                }
-            });
-
-            //sortowanko
-            //pairHolders.forEach(p -> System.out.println(p.toString()));
-
-            //todo - uwzględnoć uniquePairs -> done
-            List<PairHolder> topScoringPairs;
-            if (m_uniquePairs) {
-                topScoringPairs = getUniquePairs(pairHolders, m_kTopScoringPairs);
-            } else {
-                topScoringPairs = new ArrayList<>(pairHolders.subList(0, m_kTopScoringPairs));
-            }
-            //topScoringPairs.forEach(p -> System.out.println(p.toString()));
-
-            //TODO - kontynuacja - podzielenie danych po najlepszych parach, policzyć średnie  i wywołać rekurencyjne budowanie drzewa
-
-            // Find best attribute
-            m_kBestPairs = topScoringPairs;
+            List<PairHolder> topScoringPairs = getPairHolders(pairHolders);
             //m_Attribute = bestIndex;
 
             //todo nasz split
@@ -1671,6 +1625,67 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
                     m_Distribution[1] = totalWeight;
                 }
             }
+        }
+
+        private List<PairHolder> getPairHolders(List<PairHolder> pairHolders) {
+            Collections.sort(pairHolders, (o1, o2) -> {
+                if (o1 == null || o2 == null) throw new RuntimeException("Nie mogę porównać nulli :)");
+                return -Double.compare(o1.getDelta(), o2.getDelta());
+            });
+
+            //sortowanko
+            //pairHolders.forEach(p -> System.out.println(p.toString()));
+
+            //todo - uwzględnoć uniquePairs -> done
+            List<PairHolder> topScoringPairs;
+            if (m_uniquePairs) {
+                topScoringPairs = getUniquePairs(pairHolders, m_kTopScoringPairs);
+            } else {
+                topScoringPairs = new ArrayList<>(pairHolders.subList(0, m_kTopScoringPairs));
+            }
+            //topScoringPairs.forEach(p -> System.out.println(p.toString()));
+
+            //TODO - kontynuacja - podzielenie danych po najlepszych parach, policzyć średnie  i wywołać rekurencyjne budowanie drzewa
+
+            // Find best attribute
+            m_kBestPairs = topScoringPairs;
+            return topScoringPairs;
+        }
+
+        private List<PairHolder> createAttributesPairs(Instances data, int[] attIndicesWindow, double[][] srednie) {
+            int windowSize = attIndicesWindow.length; 
+            List<PairHolder> pairHolders = new LinkedList<>();
+            for (int i = 0; i < windowSize - 1; i++) {
+                for (int j = i + 1; j < windowSize; j++) {
+                    int attIndex1 = attIndicesWindow[i];
+                    int attIndex2 = attIndicesWindow[j];
+                    double wsp = 0;
+                    for (int i1 = 0; i1 < srednie.length; i1++) {
+                        wsp += srednie[i1][attIndex1] / srednie[i1][attIndex2];
+                    }
+                    wsp = wsp / srednie.length;
+
+                    int[] suma = new int[data.numClasses()];
+                    int[] counter = new int[data.numClasses()];
+                    for (int i1 = 0; i1 < data.size(); i1++) {
+                        counter[(int) data.get(i1).classValue()] += 1;
+                        if (data.get(i1).value(attIndex1) > wsp * data.get(i1).value(attIndex2)) {
+                            suma[(int) data.get(i1).classValue()] += 1;
+                        }
+                    }
+
+                    //TODO - zakładamy że mamy 2 klasy
+                    double[] p = new double[data.numClasses()]; // data.numClasses() = 2
+                    p[0] = suma[0] / (double) counter[0];
+                    p[1] = suma[1] / (double) counter[1];
+
+                    double delta = Math.abs(p[0] - p[1]);
+
+                    pairHolders.add(new PairHolder(attIndex1, attIndex2, wsp, delta));
+
+                }
+            }
+            return pairHolders;
         }
 
         private Instances[] splitDataWithBestPairs(Instances data, List<PairHolder> topScoringPairs) {
