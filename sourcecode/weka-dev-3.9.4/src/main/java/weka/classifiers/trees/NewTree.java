@@ -1667,21 +1667,43 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
 
                     int[] suma = new int[data.numClasses()];
                     int[] counter = new int[data.numClasses()];
-                    for (int i1 = 0; i1 < data.size(); i1++) {
-                        counter[(int) data.get(i1).classValue()] += 1;
-                        if (data.get(i1).value(attIndex1) > wsp * data.get(i1).value(attIndex2)) {
-                            suma[(int) data.get(i1).classValue()] += 1;
+                    int [][] classDistribution = new int[2][data.numClasses()];
+                    int counterL = 0;
+                    int counterR = 0;
+                    for (int i1 = 0; i1 < data.size(); i1++) { //petla po obiektach
+                        int objectClass = (int) data.get(i1).classValue();
+                        if (data.get(i1).value(attIndex1) > wsp * data.get(i1).value(attIndex2)) { // jesli tak to na lewo
+                            classDistribution[0][objectClass]++;
+                            counterL++;
                         }
+                        else {
+                            classDistribution[1][objectClass]++;
+                            counterR++;
+                        }
+//                        counter[(int) data.get(i1).classValue()] += 1;
+//                        if (data.get(i1).value(attIndex1) > wsp * data.get(i1).value(attIndex2)) {
+//                            suma[(int) data.get(i1).classValue()] += 1;
+//                        }
                     }
-
+                    float rankL = 0, rankR = 0;
+                    for(int k = 0; k < data.numClasses(); k++){
+                        float probL = (float) classDistribution[0][k]/counterL;
+                        float probR = (float)classDistribution[1][k]/counterR;
+                        rankL += probL* probL ;
+                        rankR += probR* probR ;
+                    }
+                    float mainRank = (float)counterL / data.size() * (1-rankL)  + (float)counterR / data.size() * (1 - rankR);
+                    float rank = (1 - rankR) - mainRank;
                     //TODO - zakładamy że mamy 2 klasy
-                    double[] p = new double[data.numClasses()]; // data.numClasses() = 2
-                    p[0] = suma[0] / (double) counter[0];
-                    p[1] = suma[1] / (double) counter[1];
+                    //if(mainRank < (1-rankR)) {
+                        double[] p = new double[data.numClasses()]; // data.numClasses() = 2
+                        p[0] = suma[0] / (double) counter[0];
+                        p[1] = suma[1] / (double) counter[1];
 
-                    double delta = Math.abs(p[0] - p[1]);
+                        double delta = (1-rankR) - mainRank;
 
-                    pairHolders.add(new PairHolder(attIndex1, attIndex2, wsp, delta));
+                        pairHolders.add(new PairHolder(attIndex1, attIndex2, wsp, delta));
+                    //}
 
                 }
             }
