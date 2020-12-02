@@ -1655,6 +1655,17 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
         private List<PairHolder> createAttributesPairs(Instances data, int[] attIndicesWindow, double[][] srednie) {
             int windowSize = attIndicesWindow.length; 
             List<PairHolder> pairHolders = new LinkedList<>();
+
+            float nodeRank = 0, nodeProb;
+            int [] nodeClasses = new int[data.numClasses()];
+            for (int i=0; i < data.size(); i++){
+                int objectClass = (int) data.get(i).classValue();
+                nodeClasses[objectClass]++;
+            }
+            for(int k = 0; k < data.numClasses(); k++){
+                nodeProb = (float) nodeClasses[k]/data.size();
+                nodeRank += nodeProb* nodeProb;
+            }
             for (int i = 0; i < windowSize - 1; i++) {
                 for (int j = i + 1; j < windowSize; j++) {
                     int attIndex1 = attIndicesWindow[i];
@@ -1693,14 +1704,13 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
                         rankR += probR* probR ;
                     }
                     float mainRank = (float)counterL / data.size() * (1-rankL)  + (float)counterR / data.size() * (1 - rankR);
-                    float rank = (1 - rankR) - mainRank;
                     //TODO - zakładamy że mamy 2 klasy
-                    //if(mainRank < (1-rankR)) {
-                        double[] p = new double[data.numClasses()]; // data.numClasses() = 2
-                        p[0] = suma[0] / (double) counter[0];
-                        p[1] = suma[1] / (double) counter[1];
+                    //if((1-nodeRank) - mainRank > 0.05) {
+//                        double[] p = new double[data.numClasses()]; // data.numClasses() = 2
+//                        p[0] = suma[0] / (double) counter[0];
+//                        p[1] = suma[1] / (double) counter[1];
 
-                        double delta = (1-rankR) - mainRank;
+                        double delta = (1-nodeRank) - mainRank;
 
                         pairHolders.add(new PairHolder(attIndex1, attIndex2, wsp, delta));
                     //}
