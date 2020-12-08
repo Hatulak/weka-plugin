@@ -793,8 +793,8 @@ public class NewRandomTree extends AbstractClassifier implements OptionHandler,
         }
 
         // Create the attribute indices window
-        int[] attIndicesWindow = new int[data.numAttributes() - m_defaultAttributesNum]; //tworzenie tablicy atrybutów
-        int j = m_defaultAttributesNum - 1;
+        int[] attIndicesWindow = new int[data.numAttributes() - (data.classIndex() + 1)]; //tworzenie tablicy atrybutów
+        int j = data.classIndex() +1;
         for (int i = 0; i < attIndicesWindow.length; i++) {
             if (j == data.classIndex()) {
                 j++; // do not include the class sprawdza czy index nie nie jest indexem kasy
@@ -850,16 +850,16 @@ public class NewRandomTree extends AbstractClassifier implements OptionHandler,
                 Attribute att2 = data.attribute(j);
 
                 String newAttributeName = att1.name() + "/" + att2.name();
-                data.insertAttributeAt(new Attribute(newAttributeName), data.numAttributes() - 1);
+                data.insertAttributeAt(new Attribute(newAttributeName), data.numAttributes()); //
             }
         }
 
         for (int k = 0; k < data.numInstances(); k++){
-            int index = attributesNumberDefault;
+            int index = data.classIndex() + 1;
             int i_index = 0;
-            for (int i = 0; i < attributesNumberDefault -1; i++){
+            for (int i = 0; i < data.classIndex() - 1; i++){
                 int j_index = i_index+1;
-                for (int j = i+1; j< attributesNumberDefault; j++){
+                for (int j = i+1; j< data.classIndex(); j++){
                     double value = data.get(k).value(i_index) / data.get(k).value(j_index);
                     data.instance(k).setValue(index, value);
                     index++;
