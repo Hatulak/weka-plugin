@@ -35,6 +35,7 @@ import weka.classifiers.evaluation.output.prediction.AbstractOutput;
 import weka.classifiers.evaluation.output.prediction.Null;
 import weka.classifiers.pmml.consumer.PMMLClassifier;
 import weka.classifiers.rules.ZeroR;
+import weka.classifiers.trees.NewRandomTree;
 import weka.core.Attribute;
 import weka.core.BatchPredictor;
 import weka.core.Capabilities;
@@ -1665,6 +1666,9 @@ public class ClassifierPanel extends AbstractPerspective implements
                   m_Log.logMessage("Problem copying classifier: "
                     + ex.getMessage());
                 }
+                if (current instanceof NewRandomTree){
+                  ((NewRandomTree) current).setNewAttributesCreated(true);
+                }
                 current.buildClassifier(train);
                 if (outputModelsForTrainingSplits) {
                   outBuff.append("\n=== Classifier model for fold "
@@ -1743,6 +1747,9 @@ public class ClassifierPanel extends AbstractPerspective implements
                 m_Log.logMessage("Problem copying classifier: "
                   + ex.getMessage());
               }
+                if (current instanceof NewRandomTree){
+                    ((NewRandomTree) current).setNewAttributesCreated(true);
+                }
               current.buildClassifier(train);
               if (outputModelsForTrainingSplits) {
                 outBuff.append("\n=== Classifier model for training split ("
