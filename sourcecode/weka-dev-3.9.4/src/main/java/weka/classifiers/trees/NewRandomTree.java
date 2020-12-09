@@ -844,9 +844,8 @@ public class NewRandomTree extends AbstractClassifier implements OptionHandler,
     public Instances createNewAttributes(Instances data) {
         int attributesNumberDefault = data.numAttributes() - 1;
         for (int i = 0; i< attributesNumberDefault - 1; i++){
-            List<Float> values = new ArrayList<>();
+            Attribute att1 = data.attribute(i);
             for (int j = i+1; j < attributesNumberDefault; j++){
-                Attribute att1 = data.attribute(i);
                 Attribute att2 = data.attribute(j);
 
                 String newAttributeName = att1.name() + "/" + att2.name();
