@@ -196,11 +196,7 @@ public class NewRandomTree extends AbstractClassifier implements OptionHandler,
      */
     protected double[][] m_impurityDecreasees;
 
-    public void setNewAttributesCreated(boolean m_newAttributesCreated) {
-        this.m_newAttributesCreated = m_newAttributesCreated;
-    }
 
-    private boolean m_newAttributesCreated = false;
 
     private int m_defaultAttributesNum = 0;
 
@@ -743,9 +739,8 @@ public class NewRandomTree extends AbstractClassifier implements OptionHandler,
     public void buildClassifier(Instances data) throws Exception {
 
         m_defaultAttributesNum = data.numAttributes();
-        if (!m_newAttributesCreated) {
+        if (data.classIndex() + 1 == data.numAttributes()) {
             data = createNewAttributes(data);
-            m_newAttributesCreated = true;
         }
 
         if (m_computeImpurityDecreases) {
