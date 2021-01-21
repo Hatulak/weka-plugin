@@ -155,7 +155,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
     /**
      * The maximum depth of the tree (0 = unlimited)
      */
-    protected int m_MaxDepth = 0;
+    protected int m_MaxDepth = 20;
 
     /**
      * Determines how much data is used for backfitting
@@ -1653,7 +1653,7 @@ public class NewTree extends AbstractClassifier implements OptionHandler,
         }
 
         private List<PairHolder> createAttributesPairs(Instances data, int[] attIndicesWindow, double[][] srednie) {
-            int windowSize = attIndicesWindow.length; 
+            int windowSize = attIndicesWindow.length;
             List<PairHolder> pairHolders = new LinkedList<>();
 
             float nodeRank = 0, nodeProb;
